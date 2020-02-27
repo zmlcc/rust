@@ -879,7 +879,7 @@ pub struct Stmt {
 impl Stmt {
     pub fn add_trailing_semicolon(mut self) -> Self {
         self.kind = match self.kind {
-            StmtKind::Expr(expr) => StmtKind::Semi(expr),
+            StmtKind::Expr(expr) => StmtKind::Semi(Some(expr)),
             StmtKind::Mac(mac) => {
                 StmtKind::Mac(mac.map(|(mac, _style, attrs)| (mac, MacStmtStyle::Semicolon, attrs)))
             }
@@ -911,8 +911,8 @@ pub enum StmtKind {
     Item(P<Item>),
     /// Expr without trailing semi-colon.
     Expr(P<Expr>),
-    /// Expr with a trailing semi-colon.
-    Semi(P<Expr>),
+    /// Expr with a trailing semi-colon or just a trailing semi-colon.
+    Semi(Option<P<Expr>>),
     /// Macro.
     Mac(P<(Mac, MacStmtStyle, AttrVec)>),
 }
@@ -1022,7 +1022,7 @@ impl Expr {
             match block.stmts.last().map(|last_stmt| &last_stmt.kind) {
                 // Implicit return
                 Some(&StmtKind::Expr(_)) => true,
-                Some(&StmtKind::Semi(ref expr)) => {
+                Some(&StmtKind::Semi(Some(ref expr))) => {
                     if let ExprKind::Ret(_) = expr.kind {
                         // Last statement is explicit return.
                         true
